@@ -1,6 +1,7 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -65,15 +66,36 @@ pub fn write_state(items: TokenStream) -> TokenStream {
         }
         i += 1;
     }
-    let mut file = File::create(state_file_path(key.as_str())).unwrap();
+    let mut file =
+        File::create(state_file_path(key.as_str())).expect("error: cannot write state file!");
     file.write_all(value.as_bytes()).unwrap();
-    "{}".parse().unwrap()
+    "".parse().unwrap()
 }
 
 /// Reads the state value for the specified key
 /// # Example
-/// read_state!("my key");
+/// read_state!("my key"); // => "something"
 #[proc_macro]
-pub fn read_state(_items: TokenStream) -> TokenStream {
-    "{}".parse().unwrap()
+pub fn read_state(items: TokenStream) -> TokenStream {
+    let mut i = 0;
+    let mut key = String::new();
+    for item in items {
+        let token = item.to_string();
+        if i > 0 {
+            panic!("unexpected token {}", token);
+        }
+        match item {
+            proc_macro::TokenTree::Literal(literal) => {
+                key = literal.to_string();
+            }
+            _ => {
+                panic!("unexpected token {}", token);
+            }
+        }
+        i += 1;
+    }
+    let state_file = state_file_path(key.as_str());
+    let value = fs::read_to_string(state_file).expect("error: cannot read state file!");
+    let output = format!("{}", value);
+    output.parse().unwrap()
 }
