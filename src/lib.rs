@@ -65,8 +65,15 @@ pub fn write_state(items: TokenStream) -> TokenStream {
         }
         i += 1;
     }
-    println!("key: {}, value: {}", key, value);
     let mut file = File::create(state_file_path(key.as_str())).unwrap();
     file.write_all(value.as_bytes()).unwrap();
-    "println!(\"hello world\");".parse().unwrap()
+    "{}".parse().unwrap()
+}
+
+/// Reads the state value for the specified key
+/// # Example
+/// read_state!("my key");
+#[proc_macro]
+pub fn read_state(_items: TokenStream) -> TokenStream {
+    "{}".parse().unwrap()
 }
