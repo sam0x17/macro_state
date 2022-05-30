@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "A set of macros allowing storing and loading global state at compile-time within proc macros."
-homepage = "https://sam0x17.dev"
 repository = "https://github.com/sam0x17/macro_state"
 readme = "README.md"
 
