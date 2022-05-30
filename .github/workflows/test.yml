@@ -1,0 +1,46 @@
+name: CI Checks
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  cargo-test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Dependencies
+      run: sudo apt-get update && sudo apt-get -yqq install build-essential
+    - name: Set up Rust Toolchain
+      run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+    - name: cargo build
+      working-directory: './tests'
+      run: cargo build
+    - name: cargo test
+      working-directory: './tests'
+      run: cargo test
+  tests-cargo-fmt:
+    name: tests cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Rust Toolchain
+      run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+    - name: cargo fmt
+      working-directory: './tests'
+      run: cargo fmt -- --check
+  cargo-fmt:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Rust Toolchain
+      run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+    - name: cargo fmt
+      run: cargo fmt -- --check
