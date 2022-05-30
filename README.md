@@ -19,7 +19,7 @@ using it.
 First add `macro_state` as a dependency in your `Cargo.toml` file:
 ```toml
 [dependencies]
-macro_state = "0.1.0"
+macro_state = "0.1.1"
 ```
 
 Next import the macro:
