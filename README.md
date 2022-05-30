@@ -19,7 +19,7 @@ using it.
 First add `macro_state` as a dependency in your `Cargo.toml` file:
 ```toml
 [dependencies]
-macro_state = "0.1.1"
+macro_state = "0.1.2"
 ```
 
 Next import the macro:
@@ -31,14 +31,13 @@ extern crate macro_state;
 Now you can call `write_state!` and `read_state!` anywhere in your crate, including
 inside of proc macros!
 ```rust
-write_state!("top of module", "value 2");
+write_state!("top of module", "value 1");
 
 #[test]
 fn test_write_state() {
-    write_state!("top of method", "value 3");
-    assert_eq!(read_state!("top_of_file"), "value 1");
-    assert_eq!(read_state!("top of module"), "value 2");
-    assert_eq!(read_state!("top of method"), "value 3");
+    write_state!("top of method", "value 2");
+    assert_eq!(read_state!("top of module"), "value 1");
+    assert_eq!(read_state!("top of method"), "value 2");
 }
 ```
 
