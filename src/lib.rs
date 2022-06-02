@@ -135,3 +135,38 @@ pub fn has_state(items: TokenStream) -> TokenStream {
     };
     output.parse().unwrap()
 }
+
+/// Clears the value for the specified key, if it exists
+/// # Example
+/// ```rust
+/// write_state!("my key", "test");
+/// read_state!("my key"); // => "test"
+/// clear_state!("my key");
+/// has_state!("my key"); // => false
+/// ```
+#[proc_macro]
+pub fn clear_state(items: TokenStream) -> TokenStream {
+    let mut i = 0;
+    let mut key = String::new();
+    for item in items {
+        let token = item.to_string();
+        if i > 0 {
+            panic!("unexpected token {}", token);
+        }
+        match item {
+            proc_macro::TokenTree::Literal(literal) => {
+                key = literal.to_string();
+            }
+            _ => {
+                panic!("unexpected token {}", token);
+            }
+        }
+        i += 1;
+    }
+    let state_file = state_file_path(key.as_str());
+    match fs::remove_file(state_file) {
+        Ok(_) => {}
+        Err(_) => {}
+    }
+    "".parse().unwrap()
+}

@@ -30,4 +30,12 @@ mod tests {
         assert_eq!(has_state!("key A"), true);
         assert_eq!(read_state!("key A"), "value 6");
     }
+
+    #[test]
+    fn test_clear_state() {
+        write_state!("key B", "value 7");
+        assert_eq!(read_state!("key B"), "value 7");
+        clear_state!("key B");
+        assert_eq!(has_state!("key B"), false);
+    }
 }
