@@ -38,4 +38,13 @@ mod tests {
         clear_state!("key B");
         assert_eq!(has_state!("key B"), false);
     }
+
+    #[test]
+    fn test_init_state() {
+        write_state!("key C", "value 8");
+        assert_eq!(init_state!("key C", "value -8"), "value 8");
+        assert_eq!(init_state!("key D", "value 9"), "value 9");
+        assert_eq!(init_state!("key C", "value -8"), "value 8");
+        assert_eq!(init_state!("key D", "value 9"), "value 9");
+    }
 }

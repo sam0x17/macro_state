@@ -170,3 +170,74 @@ pub fn clear_state(items: TokenStream) -> TokenStream {
     }
     "".parse().unwrap()
 }
+
+/// Returns the value for the specified key, if it exists. If
+/// it does not exist, the key is created and set to the
+/// specified value, and then the value is returned.
+/// # Example
+/// ```rust
+/// write_state!("my key", "A");
+/// init_state!("my key", "B"); // => "A"
+/// init_state!("other key", "B"); // => "B"
+/// ```
+#[proc_macro]
+pub fn init_state(items: TokenStream) -> TokenStream {
+    let mut key = String::new();
+    let mut value = String::new();
+    let mut i = 0;
+    for item in items {
+        let token = item.to_string();
+        match i {
+            0 => {
+                // first token
+                match item {
+                    proc_macro::TokenTree::Literal(literal) => {
+                        key = literal.to_string();
+                    }
+                    _ => {
+                        panic!("unexpected token {}", token);
+                    }
+                }
+            }
+            1 => {
+                // second token
+                match item {
+                    proc_macro::TokenTree::Punct(punc) => {
+                        if punc.as_char() != ',' {
+                            panic!("unexpected token {}", token);
+                        }
+                    }
+                    _ => {
+                        panic!("unexpected token {}", token);
+                    }
+                }
+            }
+            2 => {
+                // third token
+                match item {
+                    proc_macro::TokenTree::Literal(literal) => {
+                        value = literal.to_string();
+                    }
+                    _ => {
+                        panic!("unexpected token {}", token);
+                    }
+                }
+            }
+            _ => {
+                panic!("unexpected token {}", token);
+            }
+        }
+        i += 1;
+    }
+    let state_file = state_file_path(key.as_str());
+    let output = match fs::read_to_string(state_file) {
+        Ok(st) => st,
+        Err(_err) => {
+            let mut file = File::create(state_file_path(key.as_str()))
+                .expect("error: cannot write state file!");
+            file.write_all(value.as_bytes()).unwrap();
+            value
+        }
+    };
+    output.parse().unwrap()
+}
