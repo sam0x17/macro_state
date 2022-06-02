@@ -22,4 +22,12 @@ mod tests {
         write_state!("key 1", "value 5");
         assert_eq!(read_state!("key 1"), "value 5");
     }
+
+    #[test]
+    fn test_has_state() {
+        assert_eq!(has_state!("key A"), false);
+        write_state!("key A", "value 6");
+        assert_eq!(has_state!("key A"), true);
+        assert_eq!(read_state!("key A"), "value 6");
+    }
 }
