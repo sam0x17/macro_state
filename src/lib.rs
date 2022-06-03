@@ -1,7 +1,26 @@
 #[allow(unused_imports)]
 #[macro_use]
 extern crate macros;
+use std::path::PathBuf;
+
 pub use macros::*;
+
+/// A constant that will always resolve to the directory `macro_state`
+/// will use to store state files. This is typically some sub-directory
+/// of the `target` directory for the specified build environment.
+/// You should never use this directly unless you know what you're doing.
+pub const STATE_DIR: &'static str = env!("MACRO_STATE_DIR");
+
+/// Returns the path of the internal file that would be used to
+/// store state for the specified key, as a [PathBuf](std::path::PathBuf).
+/// You should never use this directly unless you know what you're doing.
+pub fn state_file_path(key: &str) -> PathBuf {
+    let filename = format!("macro_state_{}", key);
+    let mut buf = PathBuf::new();
+    buf.push(STATE_DIR);
+    buf.push(filename.as_str());
+    buf
+}
 
 write_state!("top_of_file", "value 1");
 
