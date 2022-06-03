@@ -22,10 +22,11 @@ After compilation, whatever values were present at compile-time are
 baked into the resulting binary.
 
 Currently, we offer the following macros:
-* `write_state!("key", "value")` - write `"value"` as the value for the key "key"
+* `write_state!("key", "value")` - write "value" as the value for the key "key"
 * `read_state!("key")` - returns the value for the key "key", panicking if it can't be found
 * `init_state!("key", "value")` - if the key "key" has a value, returns it, otherwise sets it to "value" and also returns it. This can be used to quickly initialize a key/value pair that may have existing data
 * `has_state!("key")` - returns a boolean indicating whether a value has been stored for the key "key"
+* `clear_state!("key")` - clears any existing state value for key "key", if it exists
 
 Non-macro analogue functions (`write_state`, `read_state`, etc) are provided for
 all of the above macros. Note that these non-macro analogues should _only_ be called
