@@ -18,6 +18,9 @@ directory for the current project. This ensures that when you do things like run
 words, this crate automatically tracks with the build artifacts of whatever is
 using it.
 
+After compilation, whatever values were present at compile-time are
+baked into the resulting binary.
+
 Currently, we offer the following macros:
 * `write_state!("key", "value")` - write `"value"` as the value for the key "key"
 * `read_state!("key")` - returns the value for the key "key", panicking if it can't be found
