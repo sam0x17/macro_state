@@ -17,14 +17,10 @@ jobs:
       run: sudo apt-get update && sudo apt-get -yqq install build-essential
     - name: Set up Rust Toolchain
       run: curl https://sh.rustup.rs -sSf | sh -s -- -y
-    - name: cargo build
-      working-directory: './tests'
-      run: cargo build
     - name: cargo test
-      working-directory: './tests'
       run: cargo test
-  tests-cargo-fmt:
-    name: tests cargo fmt
+  macros-cargo-fmt:
+    name: macros cargo fmt
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -32,7 +28,7 @@ jobs:
     - name: Set up Rust Toolchain
       run: curl https://sh.rustup.rs -sSf | sh -s -- -y
     - name: cargo fmt
-      working-directory: './tests'
+      working-directory: './macros'
       run: cargo fmt -- --check
   cargo-fmt:
     name: cargo fmt
