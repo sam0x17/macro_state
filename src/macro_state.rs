@@ -50,11 +50,25 @@ pub fn proc_has_state(key: &str) -> bool {
 }
 
 /// Clears the state value for the specified `key`, whether it exists or not
-/// 
+///
 /// This should only be called from within proc macros!
 pub fn proc_clear_state(key: &str) {
     if proc_has_state(key) {
         fs::remove_file(key).expect(format!("could not delete file {}", key).as_str());
+    }
+}
+
+/// If a state value is already defined for `key`, returns it, otherwise
+/// writes `default_value` as the state value for `key` and returns `default_value`
+///
+/// This should only be called from within proc macros!
+pub fn proc_init_state(key: &str, default_value: &str) -> Result<String> {
+    match proc_read_state(key) {
+        Ok(existing) => Ok(existing),
+        Err(_) => match proc_write_state(key, default_value) {
+            Ok(_) => Ok(String::from(default_value)),
+            Err(err) => Err(err),
+        },
     }
 }
 
