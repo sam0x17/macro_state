@@ -4,7 +4,7 @@ extern crate macros;
 use std::fs;
 use std::fs::File;
 use std::io::{Result, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub use macros::*;
 
@@ -39,6 +39,14 @@ pub fn proc_write_state(key: &str, value: &str) -> Result<()> {
 pub fn proc_read_state(key: &str) -> Result<String> {
     let state_file = state_file_path(key);
     fs::read_to_string(state_file)
+}
+
+/// Checks whether a value has been defined for the specified `key`
+///
+/// This should only be called from within proc macros!
+pub fn proc_has_state(key: &str) -> bool {
+    let state_file = state_file_path(key);
+    Path::exists(&state_file) && Path::is_file(&state_file)
 }
 
 #[cfg(test)]
