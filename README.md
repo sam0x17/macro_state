@@ -28,10 +28,9 @@ Currently, we offer the following macros:
 * `has_state!("key")` - returns a boolean indicating whether a value has been stored for the key "key"
 * `clear_state!("key")` - clears any existing state value for key "key", if it exists
 
-Non-macro analogue functions (`write_state`, `read_state`, etc) are provided for
+Non-macro analogue functions (`proc_write_state`, `proc_read_state`, etc) are provided for
 all of the above macros. Note that these non-macro analogues should _only_ be called
-from within a proc macro. They will not work properly if you use them outside of
-proc macro land.
+from within proc macros. They will not work if you use them outside of proc macro land!
 
 ## Installation
 

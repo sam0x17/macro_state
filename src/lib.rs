@@ -1,6 +1,9 @@
 #[allow(unused_imports)]
 #[macro_use]
 extern crate macros;
+use std::fs;
+use std::fs::File;
+use std::io::{Result, Write};
 use std::path::PathBuf;
 
 pub use macros::*;
@@ -22,7 +25,21 @@ pub fn state_file_path(key: &str) -> PathBuf {
     buf
 }
 
-write_state!("top_of_file", "value 1");
+/// Attempts to write `value` as the value for the key `key`.
+///
+/// This should only be called from within proc macros!
+pub fn proc_write_state(key: &str, value: &str) -> Result<()> {
+    let mut file = File::create(state_file_path(key))?;
+    file.write_all(value.as_bytes())
+}
+
+/// Attempts to read the value for the specified `key`
+///
+/// This should only be called from within proc macros!
+pub fn proc_read_state(key: &str) -> Result<String> {
+    let state_file = state_file_path(key);
+    fs::read_to_string(state_file)
+}
 
 #[cfg(test)]
 mod tests {
@@ -31,7 +48,6 @@ mod tests {
     #[test]
     fn test_write_state() {
         write_state!("top of method", "value 3");
-        assert_eq!(read_state!("top_of_file"), "value 1");
         assert_eq!(read_state!("top of module"), "value 2");
         assert_eq!(read_state!("top of method"), "value 3");
     }
