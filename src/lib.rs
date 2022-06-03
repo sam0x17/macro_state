@@ -1,243 +1,52 @@
-extern crate proc_macro;
+#[allow(unused_imports)]
+#[macro_use]
+extern crate macros;
+pub use macros::*;
 
-use proc_macro::TokenStream;
-use std::fs;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::PathBuf;
+write_state!("top_of_file", "value 1");
 
-fn state_file_path(key: &str) -> PathBuf {
-    let filename = format!("macro_state_{}", key);
-    let mut buf = PathBuf::new();
-    buf.push(env!("MACRO_STATE_DIR"));
-    buf.push(filename.as_str());
-    buf
-}
+#[cfg(test)]
+mod tests {
+    write_state!("top of module", "value 2");
 
-/// Writes the specified value as the state for the specified key
-/// # Example
-/// ```rust
-/// write_state!("my key", "some value");
-/// ```
-#[proc_macro]
-pub fn write_state(items: TokenStream) -> TokenStream {
-    let mut key = String::new();
-    let mut value = String::new();
-    let mut i = 0;
-    for item in items {
-        let token = item.to_string();
-        match i {
-            0 => {
-                // first token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        key = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            1 => {
-                // second token
-                match item {
-                    proc_macro::TokenTree::Punct(punc) => {
-                        if punc.as_char() != ',' {
-                            panic!("unexpected token {}", token);
-                        }
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            2 => {
-                // third token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        value = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
+    #[test]
+    fn test_write_state() {
+        write_state!("top of method", "value 3");
+        assert_eq!(read_state!("top_of_file"), "value 1");
+        assert_eq!(read_state!("top of module"), "value 2");
+        assert_eq!(read_state!("top of method"), "value 3");
     }
-    let mut file =
-        File::create(state_file_path(key.as_str())).expect("error: cannot write state file!");
-    file.write_all(value.as_bytes()).unwrap();
-    "".parse().unwrap()
-}
 
-/// Reads the state value for the specified key
-/// # Example
-/// ```rust
-/// read_state!("my key"); // => "something"
-/// ```
-#[proc_macro]
-pub fn read_state(items: TokenStream) -> TokenStream {
-    let mut i = 0;
-    let mut key = String::new();
-    for item in items {
-        let token = item.to_string();
-        if i > 0 {
-            panic!("unexpected token {}", token);
-        }
-        match item {
-            proc_macro::TokenTree::Literal(literal) => {
-                key = literal.to_string();
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
+    #[test]
+    fn test_rewriting_state() {
+        write_state!("key 1", "value 4");
+        assert_eq!(read_state!("key 1"), "value 4");
+        write_state!("key 1", "value 5");
+        assert_eq!(read_state!("key 1"), "value 5");
     }
-    let state_file = state_file_path(key.as_str());
-    let value = fs::read_to_string(state_file).expect("error: cannot read state file!");
-    let output = format!("{}", value);
-    output.parse().unwrap()
-}
 
-/// Checks if an existing state value can be found for the specified key
-/// # Example
-/// ```rust
-/// has_state!("my key"); // => bool
-/// ```
-#[proc_macro]
-pub fn has_state(items: TokenStream) -> TokenStream {
-    let mut i = 0;
-    let mut key = String::new();
-    for item in items {
-        let token = item.to_string();
-        if i > 0 {
-            panic!("unexpected token {}", token);
-        }
-        match item {
-            proc_macro::TokenTree::Literal(literal) => {
-                key = literal.to_string();
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
+    #[test]
+    fn test_has_state() {
+        assert_eq!(has_state!("key A"), false);
+        write_state!("key A", "value 6");
+        assert_eq!(has_state!("key A"), true);
+        assert_eq!(read_state!("key A"), "value 6");
     }
-    let state_file = state_file_path(key.as_str());
-    let output = match fs::read_to_string(state_file) {
-        Ok(_st) => "true",
-        Err(_err) => "false",
-    };
-    output.parse().unwrap()
-}
 
-/// Clears the value for the specified key, if it exists
-/// # Example
-/// ```rust
-/// write_state!("my key", "test");
-/// read_state!("my key"); // => "test"
-/// clear_state!("my key");
-/// has_state!("my key"); // => false
-/// ```
-#[proc_macro]
-pub fn clear_state(items: TokenStream) -> TokenStream {
-    let mut i = 0;
-    let mut key = String::new();
-    for item in items {
-        let token = item.to_string();
-        if i > 0 {
-            panic!("unexpected token {}", token);
-        }
-        match item {
-            proc_macro::TokenTree::Literal(literal) => {
-                key = literal.to_string();
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
+    #[test]
+    fn test_clear_state() {
+        write_state!("key B", "value 7");
+        assert_eq!(read_state!("key B"), "value 7");
+        clear_state!("key B");
+        assert_eq!(has_state!("key B"), false);
     }
-    let state_file = state_file_path(key.as_str());
-    match fs::remove_file(state_file) {
-        Ok(_) => {}
-        Err(_) => {}
-    }
-    "".parse().unwrap()
-}
 
-/// Returns the value for the specified key, if it exists. If
-/// it does not exist, the key is created and set to the
-/// specified value, and then the value is returned.
-/// # Example
-/// ```rust
-/// write_state!("my key", "A");
-/// init_state!("my key", "B"); // => "A"
-/// init_state!("other key", "B"); // => "B"
-/// ```
-#[proc_macro]
-pub fn init_state(items: TokenStream) -> TokenStream {
-    let mut key = String::new();
-    let mut value = String::new();
-    let mut i = 0;
-    for item in items {
-        let token = item.to_string();
-        match i {
-            0 => {
-                // first token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        key = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            1 => {
-                // second token
-                match item {
-                    proc_macro::TokenTree::Punct(punc) => {
-                        if punc.as_char() != ',' {
-                            panic!("unexpected token {}", token);
-                        }
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            2 => {
-                // third token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        value = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
+    #[test]
+    fn test_init_state() {
+        write_state!("key C", "value 8");
+        assert_eq!(init_state!("key C", "value -8"), "value 8");
+        assert_eq!(init_state!("key D", "value 9"), "value 9");
+        assert_eq!(init_state!("key C", "value -8"), "value 8");
+        assert_eq!(init_state!("key D", "value 9"), "value 9");
     }
-    let state_file = state_file_path(key.as_str());
-    let output = match fs::read_to_string(state_file) {
-        Ok(st) => st,
-        Err(_err) => {
-            let mut file = File::create(state_file_path(key.as_str()))
-                .expect("error: cannot write state file!");
-            file.write_all(value.as_bytes()).unwrap();
-            value
-        }
-    };
-    output.parse().unwrap()
 }

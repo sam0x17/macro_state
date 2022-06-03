@@ -7,7 +7,5 @@ description = "A set of macros allowing storing and loading global state at comp
 repository = "https://github.com/sam0x17/macro_state"
 readme = "README.md"
 
-[lib]
-proc-macro = true
-
 [dependencies]
+macros = { path = "./macros"}
