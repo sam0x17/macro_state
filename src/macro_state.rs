@@ -49,6 +49,15 @@ pub fn proc_has_state(key: &str) -> bool {
     Path::exists(&state_file) && Path::is_file(&state_file)
 }
 
+/// Clears the state value for the specified `key`, whether it exists or not
+/// 
+/// This should only be called from within proc macros!
+pub fn proc_clear_state(key: &str) {
+    if proc_has_state(key) {
+        fs::remove_file(key).expect(format!("could not delete file {}", key).as_str());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     write_state!("top of module", "value 2");
