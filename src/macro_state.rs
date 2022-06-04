@@ -45,16 +45,21 @@ pub fn proc_read_state(key: &str) -> Result<String> {
 ///
 /// This should only be called from within proc macros!
 pub fn proc_has_state(key: &str) -> bool {
-    let state_file = state_file_path(key);
-    Path::exists(&state_file) && Path::is_file(&state_file)
+    match proc_read_state(key) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }
 
 /// Clears the state value for the specified `key`, whether it exists or not
 ///
 /// This should only be called from within proc macros!
 pub fn proc_clear_state(key: &str) {
+    let state_file = state_file_path(key);
+    let state_file_path = state_file.to_str().unwrap();
     if proc_has_state(key) {
-        fs::remove_file(key).expect(format!("could not delete file {}", key).as_str());
+        fs::remove_file(state_file.clone())
+            .expect(format!("could not delete file {}", state_file_path).as_str());
     }
 }
 
@@ -74,6 +79,7 @@ pub fn proc_init_state(key: &str, default_value: &str) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
+    use crate::*;
     write_state!("top of module", "value 2");
 
     #[test]
@@ -114,5 +120,24 @@ mod tests {
         assert_eq!(init_state!("key D", "value 9"), "value 9");
         assert_eq!(init_state!("key C", "value -8"), "value 8");
         assert_eq!(init_state!("key D", "value 9"), "value 9");
+    }
+
+    #[test]
+    fn test_proc_state_functions() {
+        assert_eq!(proc_has_state("proc A"), false);
+        assert!(proc_read_state("proc B").is_err());
+        proc_write_state("proc A", "val A").unwrap();
+        assert!(proc_has_state("proc A"));
+        assert_eq!(proc_read_state("proc A").unwrap(), "val A");
+        assert_eq!(proc_init_state("proc A", "val B").unwrap(), "val A");
+        proc_init_state("proc B", "val B").unwrap();
+        assert_eq!(proc_read_state("proc B").unwrap(), "val B");
+        assert!(proc_has_state("proc B"));
+        proc_clear_state("proc B");
+        proc_clear_state("proc A");
+        assert_eq!(proc_has_state("proc A"), false);
+        assert_eq!(proc_has_state("proc B"), false);
+        assert!(proc_read_state("proc B").is_err());
+        assert!(proc_read_state("proc A").is_err());
     }
 }
