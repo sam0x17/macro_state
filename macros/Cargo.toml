@@ -13,3 +13,4 @@ proc-macro = true
 path = "src/macros.rs"
 
 [dependencies]
+lazy_static = "1.4.0"

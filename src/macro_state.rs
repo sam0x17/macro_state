@@ -1,12 +1,24 @@
 #[allow(unused_imports)]
 #[macro_use]
 extern crate macro_state_macros;
+
+#[macro_use]
+extern crate lazy_static;
+
 use std::fs;
 use std::fs::File;
 use std::io::{Result, Write};
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub use macro_state_macros::*;
+
+lazy_static! {
+    static ref COMPILE_TIME: u128 = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+}
 
 /// A constant that will always resolve to the directory `macro_state`
 /// will use to store state files. This is typically some sub-directory
@@ -18,7 +30,8 @@ pub const STATE_DIR: &'static str = env!("MACRO_STATE_DIR");
 /// store state for the specified key, as a [PathBuf](std::path::PathBuf).
 /// You should never use this directly unless you know what you're doing.
 pub fn state_file_path(key: &str) -> PathBuf {
-    let filename = format!("macro_state_{}", key);
+    let ctime = COMPILE_TIME.clone();
+    let filename = format!("macro_state_{}_{}", key, ctime);
     let mut buf = PathBuf::new();
     buf.push(STATE_DIR);
     buf.push(filename.as_str());

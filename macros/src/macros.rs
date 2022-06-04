@@ -1,13 +1,25 @@
 extern crate proc_macro;
 
+#[macro_use]
+extern crate lazy_static;
+
 use proc_macro::TokenStream;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+lazy_static! {
+    static ref COMPILE_TIME: u128 = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+}
 
 fn state_file_path(key: &str) -> PathBuf {
-    let filename = format!("macro_state_{}", key);
+    let ctime = COMPILE_TIME.clone();
+    let filename = format!("macro_state_{}_{}", key, ctime);
     let mut buf = PathBuf::new();
     buf.push(env!("MACRO_STATE_DIR"));
     buf.push(filename.as_str());

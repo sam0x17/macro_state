@@ -12,3 +12,4 @@ path = "src/macro_state.rs"
 
 [dependencies]
 macro_state_macros = { path = "./macros", version = "0.1.4" }
+lazy_static = "1.4.0"
