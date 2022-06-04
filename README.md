@@ -37,7 +37,7 @@ from within proc macros. They will not work if you use them outside of proc macr
 First add `macro_state` as a dependency in your `Cargo.toml` file:
 ```toml
 [dependencies]
-macro_state = "0.1.3"
+macro_state = "0.1.4"
 ```
 
 Next import the macro:

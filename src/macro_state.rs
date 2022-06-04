@@ -4,7 +4,7 @@ extern crate macros;
 use std::fs;
 use std::fs::File;
 use std::io::{Result, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub use macros::*;
 
