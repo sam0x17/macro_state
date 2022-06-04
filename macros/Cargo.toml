@@ -1,7 +1,9 @@
 [package]
-name = "macros"
-version = "0.1.1"
+name = "macro_state_macros"
+version = "0.1.4"
 edition = "2021"
+repository = "https://github.com/sam0x17/macro_state"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

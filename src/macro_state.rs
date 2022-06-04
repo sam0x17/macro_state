@@ -1,12 +1,12 @@
 #[allow(unused_imports)]
 #[macro_use]
-extern crate macros;
+extern crate macro_state_macros;
 use std::fs;
 use std::fs::File;
 use std::io::{Result, Write};
 use std::path::PathBuf;
 
-pub use macros::*;
+pub use macro_state_macros::*;
 
 /// A constant that will always resolve to the directory `macro_state`
 /// will use to store state files. This is typically some sub-directory

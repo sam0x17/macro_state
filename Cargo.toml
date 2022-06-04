@@ -11,4 +11,4 @@ readme = "README.md"
 path = "src/macro_state.rs"
 
 [dependencies]
-macros = { path = "./macros", version = "0.1.1" }
+macro_state_macros = { path = "./macros", version = "0.1.4" }
