@@ -1,6 +1,6 @@
 # macro_state
 
-![crates.io](https://img.shields.io/crates/v/macro_state.svg) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/sam0x17/macro_state/CI%20Checks/main)
+![crates.io](https://img.shields.io/crates/v/macro_state.svg) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/sam0x17/macro_state/CI%20Checks/main) ![docs.rs](https://img.shields.io/docsrs/macro_state)
 
 Currently, Rust does not provide the ability to keep track of any sort of global
 state between macro calls out of the box.
