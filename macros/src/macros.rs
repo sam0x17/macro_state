@@ -72,27 +72,12 @@ pub fn write_state(items: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn read_state(items: TokenStream) -> TokenStream {
-    let mut i = 0;
-    let mut key = String::new();
-    for item in items {
-        let token = item.to_string();
-        if i > 0 {
-            panic!("unexpected token {}", token);
-        }
-        match item {
-            proc_macro::TokenTree::Literal(literal) => {
-                key = literal.to_string();
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
-    }
+    let key = parse_macro_input!(items as LitStr).value();
     let state_file = state_file_path(key.as_str());
-    let value = fs::read_to_string(state_file).expect("error: cannot read state file!");
-    let output = format!("{}", value);
-    output.parse().unwrap()
+    match fs::read_to_string(state_file) {
+        Ok(value) => quote!(#value).into(),
+        Err(err) => quote_io_error(err),
+    }
 }
 
 /// Checks if an existing state value can be found for the specified key
