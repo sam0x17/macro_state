@@ -125,62 +125,18 @@ pub fn clear_state(items: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn init_state(items: TokenStream) -> TokenStream {
-    let mut key = String::new();
-    let mut value = String::new();
-    let mut i = 0;
-    for item in items {
-        let token = item.to_string();
-        match i {
-            0 => {
-                // first token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        key = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            1 => {
-                // second token
-                match item {
-                    proc_macro::TokenTree::Punct(punc) => {
-                        if punc.as_char() != ',' {
-                            panic!("unexpected token {}", token);
-                        }
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            2 => {
-                // third token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        value = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
-    }
+    let args = parse_macro_input!(items as WriteStateInput);
+    let key = args.key.value().to_string();
+    let value = args.value.value().to_string();
     let state_file = state_file_path(key.as_str());
-    let output = match fs::read_to_string(state_file) {
-        Ok(st) => st,
-        Err(_err) => {
-            let mut file = File::create(state_file_path(key.as_str()))
-                .expect("error: cannot write state file!");
-            file.write_all(value.as_bytes()).unwrap();
-            value
-        }
-    };
-    output.parse().unwrap()
+    match fs::read_to_string(state_file) {
+        Ok(string) => quote!(#string).into(),
+        Err(_) => match File::create(state_file_path(key.as_str())) {
+            Ok(mut file) => match file.write_all(value.as_bytes()) {
+                Ok(_) => quote!(#value).into(),
+                Err(err) => quote_io_error(err),
+            },
+            Err(err) => quote_io_error(err),
+        },
+    }
 }
