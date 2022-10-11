@@ -3,12 +3,21 @@ extern crate proc_macro;
 #[macro_use]
 extern crate lazy_static;
 
+extern crate quote;
+extern crate syn;
+
+extern crate derive_syn_parse;
+use derive_syn_parse::Parse;
+
 use proc_macro::TokenStream;
+use quote::quote;
 use std::fs;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{prelude::*, Error};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+use syn::token::Comma;
+use syn::{parse_macro_input, LitStr};
 
 lazy_static! {
     static ref COMPILE_TIME: u128 = SystemTime::now()
@@ -26,6 +35,18 @@ fn state_file_path(key: &str) -> PathBuf {
     buf
 }
 
+fn quote_io_error(e: Error) -> TokenStream {
+    let msg = e.to_string();
+    quote!(compile_error!(#msg)).into()
+}
+
+#[derive(Parse)]
+struct WriteStateInput {
+    key: LitStr,
+    _comma: Comma,
+    value: LitStr,
+}
+
 /// Writes the specified value as the state for the specified key
 /// # Example
 /// ```rust
@@ -33,57 +54,15 @@ fn state_file_path(key: &str) -> PathBuf {
 /// ```
 #[proc_macro]
 pub fn write_state(items: TokenStream) -> TokenStream {
-    let mut key = String::new();
-    let mut value = String::new();
-    let mut i = 0;
-    for item in items {
-        let token = item.to_string();
-        match i {
-            0 => {
-                // first token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        key = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            1 => {
-                // second token
-                match item {
-                    proc_macro::TokenTree::Punct(punc) => {
-                        if punc.as_char() != ',' {
-                            panic!("unexpected token {}", token);
-                        }
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            2 => {
-                // third token
-                match item {
-                    proc_macro::TokenTree::Literal(literal) => {
-                        value = literal.to_string();
-                    }
-                    _ => {
-                        panic!("unexpected token {}", token);
-                    }
-                }
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
+    let args = parse_macro_input!(items as WriteStateInput);
+    let state_file = state_file_path(args.key.value().as_str());
+    match File::create(state_file) {
+        Ok(mut file) => match file.write_all(args.value.value().as_bytes()) {
+            Ok(_) => "".parse().unwrap(),
+            Err(e) => quote_io_error(e),
+        },
+        Err(e) => quote_io_error(e),
     }
-    let mut file =
-        File::create(state_file_path(key.as_str())).expect("error: cannot write state file!");
-    file.write_all(value.as_bytes()).unwrap();
-    "".parse().unwrap()
 }
 
 /// Reads the state value for the specified key
