@@ -58,7 +58,7 @@ pub fn write_state(items: TokenStream) -> TokenStream {
     let state_file = state_file_path(args.key.value().as_str());
     match File::create(state_file) {
         Ok(mut file) => match file.write_all(args.value.value().as_bytes()) {
-            Ok(_) => "".parse().unwrap(),
+            Ok(_) => quote!().into(),
             Err(e) => quote_io_error(e),
         },
         Err(e) => quote_io_error(e),
@@ -105,29 +105,13 @@ pub fn has_state(items: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn clear_state(items: TokenStream) -> TokenStream {
-    let mut i = 0;
-    let mut key = String::new();
-    for item in items {
-        let token = item.to_string();
-        if i > 0 {
-            panic!("unexpected token {}", token);
-        }
-        match item {
-            proc_macro::TokenTree::Literal(literal) => {
-                key = literal.to_string();
-            }
-            _ => {
-                panic!("unexpected token {}", token);
-            }
-        }
-        i += 1;
-    }
+    let key = parse_macro_input!(items as LitStr).value();
     let state_file = state_file_path(key.as_str());
     match fs::remove_file(state_file) {
         Ok(_) => {}
         Err(_) => {}
     }
-    "".parse().unwrap()
+    quote!().into()
 }
 
 /// Returns the value for the specified key, if it exists. If
