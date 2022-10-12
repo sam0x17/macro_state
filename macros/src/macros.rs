@@ -9,13 +9,14 @@ extern crate syn;
 extern crate derive_syn_parse;
 use derive_syn_parse::Parse;
 
-use proc_macro::TokenStream;
-use quote::quote;
 use std::fs;
-use std::fs::File;
-use std::io::{prelude::*, Error};
+use std::fs::{File, OpenOptions};
+use std::io::{Error, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use proc_macro::TokenStream;
+use quote::quote;
 use syn::token::Comma;
 use syn::{parse_macro_input, LitStr};
 
@@ -58,6 +59,46 @@ pub fn write_state(items: TokenStream) -> TokenStream {
     let state_file = state_file_path(args.key.value().as_str());
     match File::create(state_file) {
         Ok(mut file) => match file.write_all(args.value.value().as_bytes()) {
+            Ok(_) => quote!().into(),
+            Err(e) => quote_io_error(e),
+        },
+        Err(e) => quote_io_error(e),
+    }
+}
+
+/// Like [`write_state!`], but instead appends the specified `value` (newline-delimited) to the
+/// state file. Newlines contained in the `value` are automatically escaped so you can think of
+/// this as appending to a [`Vec<String>`] for all intents and purposes. Calling [`append_state!`]
+/// is also more efficient than re-writing an entire state file via [`write_state!`] since the
+/// low level append io option is not used by [`write_state!`].
+///
+/// If no state file for the specified `key` exists, it will be created automatically. In this
+/// way, [`append_state!`] functions similar to how [`init_state!`] functions, especially in the
+/// no-existing-file case.
+///
+/// Note that if [`read_state!`] is called on an [`append_state!`]-based state file, newlines
+/// will be returned in the response.
+///
+/// # Examples
+///
+/// ```
+/// append_state!("my_key", "apples");
+/// append_state!("my_key", "pears");
+/// append_state!("my_key", "oh my!");
+/// assert_eq!(read_state!("my_key"), "apples\npears\noh my!");
+/// ```
+#[proc_macro]
+pub fn append_state(items: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(items as WriteStateInput);
+    let state_file = state_file_path(args.key.value().as_str());
+    let value = args.value.value().replace("\n", "\\n");
+    let value = format!("{}\n", value);
+    match OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(state_file)
+    {
+        Ok(mut file) => match file.write_all(value.as_bytes()) {
             Ok(_) => quote!().into(),
             Err(e) => quote_io_error(e),
         },

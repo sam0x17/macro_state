@@ -136,6 +136,22 @@ mod tests {
     }
 
     #[test]
+    fn test_append_state() {
+        append_state!("append_key", "first line");
+        assert_eq!(read_state!("append_key"), "first line\n");
+        append_state!("append_key", "2nd line");
+        assert_eq!(read_state!("append_key"), "first line\n2nd line\n");
+        append_state!("append_key", "3rd line");
+        assert_eq!(
+            read_state!("append_key"),
+            "first line\n2nd line\n3rd line\n"
+        );
+        write_state!("append_key", "");
+        append_state!("append_key", "first line");
+        assert_eq!(read_state!("append_key"), "first line\n");
+    }
+
+    #[test]
     fn test_proc_state_functions() {
         assert_eq!(proc_has_state("proc A"), false);
         assert!(proc_read_state("proc B").is_err());
