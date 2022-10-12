@@ -153,7 +153,10 @@ pub fn read_state_vec(items: TokenStream) -> TokenStream {
                     value = value[0..(value.len() - 1)].to_string();
                 }
             }
-            let items: Vec<&str> = value.split("\n").collect();
+            let items: Vec<String> = value
+                .split("\n")
+                .map(|item| item.replace("\\n", "\n"))
+                .collect();
             quote!(vec![#(#items), *]).into()
         }
         Err(err) => quote_io_error(err),

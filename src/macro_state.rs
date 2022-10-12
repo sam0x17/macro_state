@@ -170,6 +170,19 @@ mod tests {
     }
 
     #[test]
+    fn test_append_state_newline_escaping() {
+        append_state!("append3", "line 1");
+        append_state!("append3", "hey\nwhat");
+        append_state!("append3", "line 3");
+        assert_eq!(
+            read_state_vec!("append3"),
+            vec!["line 1", "hey\nwhat", "line 3"]
+        );
+        append_state!("append4", "\n");
+        assert_eq!(read_state_vec!("append4"), vec!["\n"]);
+    }
+
+    #[test]
     fn test_proc_state_functions() {
         assert_eq!(proc_has_state("proc A"), false);
         assert!(proc_read_state("proc B").is_err());
