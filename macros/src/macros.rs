@@ -70,7 +70,7 @@ pub fn write_state(items: TokenStream) -> TokenStream {
 /// state file. Newlines contained in the `value` are automatically escaped so you can think of
 /// this as appending to a [`Vec<String>`] for all intents and purposes. Calling [`append_state!`]
 /// is also more efficient than re-writing an entire state file via [`write_state!`] since the
-/// low level append io option is not used by [`write_state!`].
+/// low level append IO option is not used by [`write_state!`].
 ///
 /// If no state file for the specified `key` exists, it will be created automatically. In this
 /// way, [`append_state!`] functions similar to how [`init_state!`] functions, especially in the
@@ -85,7 +85,7 @@ pub fn write_state(items: TokenStream) -> TokenStream {
 /// append_state!("my_key", "apples");
 /// append_state!("my_key", "pears");
 /// append_state!("my_key", "oh my!");
-/// assert_eq!(read_state!("my_key"), "apples\npears\noh my!");
+/// assert_eq!(read_state!("my_key"), "apples\npears\noh my!\n");
 /// ```
 #[proc_macro]
 pub fn append_state(items: TokenStream) -> TokenStream {

@@ -6,7 +6,7 @@ extern crate macro_state_macros;
 extern crate lazy_static;
 
 use std::fs;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{Result, Write};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -90,6 +90,44 @@ pub fn proc_init_state(key: &str, default_value: &str) -> Result<String> {
     }
 }
 
+/// An analogue for [`append_state!`] that should only be used within proc macros.
+///
+/// Like [`proc_write_state`], but instead appends the specified `value` (newline-delimited) to the
+/// state file. Newlines contained in the `value` are automatically escaped so you can think of
+/// this as appending to a [`Vec<String>`] for all intents and purposes. Calling [`proc_append_state`]
+/// is also more efficient than re-writing an entire state file via [`proc_write_state`] since the
+/// low level append IO option is not used by [`proc_write_state`].
+///
+/// If no state file for the specified `key` exists, it will be created automatically. In this
+/// way, [`proc_append_state`] functions similar to how [`proc_init_state`] functions, especially in the
+/// no-existing-file case.
+///
+/// Note that if [`proc_read_state`] is called on a [`proc_append_state`]-based state file, newlines
+/// will be returned in the response.
+///
+/// # Examples
+///
+/// ```
+/// use macro_state::*;
+///
+/// proc_append_state("my_key", "apples");
+/// proc_append_state("my_key", "pears");
+/// proc_append_state("my_key", "oh my!");
+/// assert_eq!(proc_read_state("my_key").unwrap(), "apples\npears\noh my!\n");
+/// ```
+pub fn proc_append_state(key: &str, value: &str) -> Result<()> {
+    let value = format!("{}\n", value.replace("\n", "\\n"));
+    let state_file = state_file_path(key);
+    match OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(state_file)
+    {
+        Ok(mut file) => return file.write_all(value.as_bytes()),
+        Err(e) => Err(e),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::*;
@@ -149,6 +187,25 @@ mod tests {
         write_state!("append_key", "");
         append_state!("append_key", "first line");
         assert_eq!(read_state!("append_key"), "first line\n");
+    }
+
+    #[test]
+    fn test_proc_append_state() {
+        proc_append_state("append_key", "first line").unwrap();
+        assert_eq!(proc_read_state("append_key").unwrap(), "first line\n");
+        proc_append_state("append_key", "2nd line").unwrap();
+        assert_eq!(
+            proc_read_state("append_key").unwrap(),
+            "first line\n2nd line\n"
+        );
+        proc_append_state("append_key", "3rd line").unwrap();
+        assert_eq!(
+            proc_read_state("append_key").unwrap(),
+            "first line\n2nd line\n3rd line\n"
+        );
+        proc_write_state("append_key", "").unwrap();
+        proc_append_state("append_key", "first line").unwrap();
+        assert_eq!(proc_read_state("append_key").unwrap(), "first line\n");
     }
 
     #[test]
