@@ -152,6 +152,24 @@ mod tests {
     }
 
     #[test]
+    fn test_read_state_vec() {
+        append_state!("append2", "line 1");
+        assert_eq!(read_state_vec!("append2"), vec!["line 1"]);
+        append_state!("append2", "line 2");
+        assert_eq!(read_state_vec!("append2"), vec!["line 1", "line 2"]);
+        append_state!("append2", "line 3");
+        assert_eq!(
+            read_state_vec!("append2"),
+            vec!["line 1", "line 2", "line 3"]
+        );
+        append_state!("append2", "");
+        assert_eq!(
+            read_state_vec!("append2"),
+            vec!["line 1", "line 2", "line 3", ""]
+        );
+    }
+
+    #[test]
     fn test_proc_state_functions() {
         assert_eq!(proc_has_state("proc A"), false);
         assert!(proc_read_state("proc B").is_err());

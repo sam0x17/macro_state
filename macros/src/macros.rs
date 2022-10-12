@@ -121,6 +121,45 @@ pub fn read_state(items: TokenStream) -> TokenStream {
     }
 }
 
+/// Reads the state value for the specified key and parses it as a [`Vec<String>`] where each new
+/// line is treated as a separate element in the [`Vec`]. Should be used in conjunction with
+/// [`append_state!`] to read and write lists of values from macro state storage.
+///
+/// Returns: a [`Vec<String>`]. Throws a compiler error if the specified state key cannot be found.
+///
+/// Note: If you need to initialize a state vec to an empty list, you can use
+/// `init_state("key", "\n")` which should result in an empty [`Vec<String>`] when the state
+/// file is read by [`read_state_vec!`].
+///
+/// Note: the [`Vec<String>`] returned by this macro is in literal form, e.g.
+/// ```
+/// vec!["item 1", "item 2", "item 3"];
+/// ```
+///
+/// # Example
+/// ```
+/// append_state!("my_key", "first item");
+/// append_state!("my_key", "2nd item");
+/// assert_eq!(read_state_vec("my_key"), vec!["first item", "2nd item"]);
+/// ```
+#[proc_macro]
+pub fn read_state_vec(items: TokenStream) -> TokenStream {
+    let key = parse_macro_input!(items as LitStr).value();
+    let state_file = state_file_path(key.as_str());
+    match fs::read_to_string(state_file) {
+        Ok(mut value) => {
+            if let Some(last) = value.as_str().chars().last() {
+                if last == '\n' {
+                    value = value[0..(value.len() - 1)].to_string();
+                }
+            }
+            let items: Vec<&str> = value.split("\n").collect();
+            quote!(vec![#(#items), *]).into()
+        }
+        Err(err) => quote_io_error(err),
+    }
+}
+
 /// Checks if an existing state value can be found for the specified key
 /// # Example
 /// ```rust
