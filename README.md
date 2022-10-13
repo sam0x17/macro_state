@@ -13,34 +13,53 @@ set at compile-time can also be read directly by runtime code, if needed.
 
 ## Functionality
 
-The `write_state!` macro stores state in flat files that live in the target build directory for
-the current project. This ensures that when you do things like run `cargo clean`, the current
-state values are automatically reset as well. In other words, this crate automatically tracks
-with the build artifacts of whatever is using it.
+The [`write_state!`](https://docs.rs/macro_state/latest/macro_state/macro.write_state.html) and
+[`append_state!`](https://docs.rs/macro_state/latest/macro_state/macro.append_state.html)
+macros store state in flat files that live in the target build directory for the current
+project. This ensures that when you do things like run `cargo clean` or change your code, the
+current state values are automatically reset as well. In other words, this crate automatically
+tracks with the build artifacts of whatever is using it.
 
 After compilation, whatever values were present at compile-time are baked into the resulting
 binary.
 
-Currently, we offer the following macros:
-* `write_state!("key", "value")` - write "value" as the value for the key "key"
-* `read_state!("key")` - returns the value for the key "key", panicking if it can't be found
-* `init_state!("key", "value")` - if the key "key" has a value, returns it, otherwise sets it
-  to "value" and also returns it. This can be used to quickly initialize a key/value pair that
-  may have existing data
-* `has_state!("key")` - returns a boolean indicating whether a value has been stored for the
-  key "key"
-* `clear_state!("key")` - clears any existing state value for key "key", if it exists
+### Macros
 
-Non-macro analogue functions (`proc_write_state`, `proc_read_state`, etc) are provided for all
-of the above macros. Note that these non-macro analogues should _only_ be called from within
-proc macros. They will not work if you use them outside of proc macro land!
+Currently, we offer the following macros:
+* [`write_state!("key","value")`](https://docs.rs/macro_state/latest/macro_state/macro.write_state.html)
+  writes `"value"` as the value for the key `"key"`
+* [`read_state!("key")`](https://docs.rs/macro_state/latest/macro_state/macro.read_state.html)
+  returns the value for the key `"key"`, issuing a compiler error if it can't be found
+* [`init_state!("key","value")`](https://docs.rs/macro_state/latest/macro_state/macro.init_state.html)
+  if the key `"key"` has a value, returns it, otherwise sets it to `"value"` and also returns
+  it. This can be used to quickly initialize a key value pair that may have existing data
+* [`has_state!("key")`](https://docs.rs/macro_state/latest/macro_state/macro.has_state.html)
+  returns a boolean indicating whether a value has been stored for the key `"key"`
+* [`clear_state!("key")`](https://docs.rs/macro_state/latest/macro_state/macro.clear_state.html)
+  clears any existing state value for key `"key"`, if it exists
+* [`append_state!("key","value")`](https://docs.rs/macro_state/latest/macro_state/macro.append_state.html)
+  appends `"value"` to the value list for the specified key. Used in conjunction with
+  `read_state_vec!` to add to and manage lists within state files.
+* [`read_state_vec!("key")`](https://docs.rs/macro_state/latest/macro_state/macro.read_state_vec.html)
+  reads the state file for key `"key"` as a `Vec<String>`. Used in conjunction with
+  `append_state!` to manage manage lists within state files.
+
+### Within Proc Macros
+
+Non-macro analogues for all of the macros listed above can be found
+[here](https://docs.rs/macro_state/latest/macro_state/index.html#functions). These analogues
+all begin with `proc_`, such as `proc_read_state`, and **should only be used within proc
+macros**.
+
+Using these functions anywhere but within a proc macro will result in broken/undefined
+behavior.
 
 ## Installation
 
 First add `macro_state` as a dependency in your `Cargo.toml` file:
 ```toml
 [dependencies]
-macro_state = "0.1.7"
+macro_state = "0.1.9"
 ```
 
 Next import the macro:
@@ -53,6 +72,7 @@ extern crate macro_state;
 
 Now you can call `write_state!` and `read_state!` anywhere in your crate, including inside of
 proc macros!
+
 ```rust
 write_state!("top of module", "value 1");
 
