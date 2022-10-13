@@ -115,6 +115,7 @@ pub fn proc_init_state(key: &str, default_value: &str) -> Result<String> {
 /// proc_append_state("my_key", "pears");
 /// proc_append_state("my_key", "oh my!");
 /// assert_eq!(proc_read_state("my_key").unwrap(), "apples\npears\noh my!\n");
+/// assert_eq!(proc_read_state_vec("my_key").unwrap(), vec!["apples", "pears", "oh my!"]);
 /// ```
 pub fn proc_append_state(key: &str, value: &str) -> Result<()> {
     let value = format!("{}\n", value.replace("\n", "\\n"));
