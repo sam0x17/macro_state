@@ -140,7 +140,7 @@ pub fn read_state(items: TokenStream) -> TokenStream {
 /// ```
 /// append_state!("my_key", "first item");
 /// append_state!("my_key", "2nd item");
-/// assert_eq!(read_state_vec("my_key"), vec!["first item", "2nd item"]);
+/// assert_eq!(read_state_vec!("my_key"), vec!["first item", "2nd item"]);
 /// ```
 #[proc_macro]
 pub fn read_state_vec(items: TokenStream) -> TokenStream {
