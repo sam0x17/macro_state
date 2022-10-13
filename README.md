@@ -40,7 +40,7 @@ proc macros. They will not work if you use them outside of proc macro land!
 First add `macro_state` as a dependency in your `Cargo.toml` file:
 ```toml
 [dependencies]
-macro_state = "0.1.5"
+macro_state = "0.1.6"
 ```
 
 Next import the macro:
