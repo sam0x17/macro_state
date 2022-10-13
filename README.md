@@ -62,10 +62,10 @@ First add `macro_state` as a dependency in your `Cargo.toml` file:
 macro_state = "0.1.9"
 ```
 
-Next import the macro:
+Next set up your imports:
 ```rust
-#[macro_use]
 extern crate macro_state;
+use macro_state::*;
 ```
 
 ## Usage
