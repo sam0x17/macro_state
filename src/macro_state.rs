@@ -38,25 +38,75 @@ pub fn state_file_path(key: &str) -> PathBuf {
     buf
 }
 
-/// Attempts to write `value` as the value for the key `key`.
+/// An analogue for [`write_state!`] that should only be used within proc macros.
 ///
-/// This should only be called from within proc macros!
+/// Writes the specified `value` as the state for the specified state `key`. `macro_state`
+/// itself functions as a compile-time key-value store, and this is how you write a value to a
+/// specific key.
+///
+/// If any IO error occurs while attempting to write to the specified state key, the IO error
+/// will be be returned as the [`Err`] result.
+///
+/// Calling [`proc_read_state`] with the same key that was written to in a [`proc_write_state`]
+/// call should result in a string literal that matches what was written via
+/// [`proc_write_state`].
+///
+/// # Example
+/// ```
+/// use macro_state::*;
+///
+/// proc_write_state("my key", "some value").unwrap();
+/// assert_eq!(proc_read_state("my key").unwrap(), "some value");
+/// ```
 pub fn proc_write_state(key: &str, value: &str) -> Result<()> {
     let mut file = File::create(state_file_path(key))?;
     file.write_all(value.as_bytes())
 }
 
-/// Attempts to read the value for the specified `key`
+/// An analogue for [`read_state!`] that should only be used within proc macros.
 ///
-/// This should only be called from within proc macros!
+/// Reads the state value for the specified `key`. Since `macro_state` functions as a
+/// compile-time key-value store, [`proc_read_state`] attempts to read the state value
+/// associaed with the specified key.
+///
+/// The macro will expand into a string literal representing the state value in the event that
+/// a value exists for the provided key.
+///
+/// If no value can be found for the provided key (or in the event of any sort of IO error),
+/// the macro will raise a compile-time IO error.
+///
+/// # Example
+/// ```
+/// use macro_state::*;
+///
+/// proc_write_state("cool key", "something").unwrap();
+/// assert_eq!(proc_read_state("cool key").unwrap(), "something");
+/// let result = proc_read_state("undefined key");
+/// assert!(matches!(result, Err(_)));
+/// ```
 pub fn proc_read_state(key: &str) -> Result<String> {
     let state_file = state_file_path(key);
     fs::read_to_string(state_file)
 }
 
-/// Checks whether a value has been defined for the specified `key`
+/// An analogue for [`has_state!`] that should only be used within proc macros.
 ///
-/// This should only be called from within proc macros!
+/// Checks if an existing state value can be found for the specified `key`.
+///
+/// Note that this function is infallible -- it should never panic and will always return
+/// `true` or `false`.
+///
+/// # Example
+/// ```
+/// use macro_state::*;
+///
+/// proc_write_state("my key", "hey").unwrap();
+/// assert_eq!(proc_has_state("my key"), true);
+/// assert_eq!(proc_has_state("unknown key"), false);
+/// ```
+///
+/// Internally this function simply calls [`proc_read_state`], returning `false` in the event
+/// of an IO error.
 pub fn proc_has_state(key: &str) -> bool {
     match proc_read_state(key) {
         Ok(_) => true,
@@ -64,22 +114,44 @@ pub fn proc_has_state(key: &str) -> bool {
     }
 }
 
-/// Clears the state value for the specified `key`, whether it exists or not
+/// An analogue for [`clear_state!`] that should only be used within proc macros.
 ///
-/// This should only be called from within proc macros!
-pub fn proc_clear_state(key: &str) {
+/// Clears the value for the specified `key`, if it exists.
+///
+/// If an error occurs while trying to clear the state file for the specified key, the error
+/// will be returned as the [`Err`] variant of the [`std::io::Result`].
+///
+///
+/// # Example
+/// ```
+/// use macro_state::*;
+///
+/// proc_write_state("my key", "test").unwrap();
+/// assert_eq!(proc_read_state("my key").unwrap(), "test");
+/// proc_clear_state("my key").unwrap();
+/// assert_eq!(proc_has_state("my key"), false);
+/// ```
+pub fn proc_clear_state(key: &str) -> Result<()> {
     let state_file = state_file_path(key);
-    let state_file_path = state_file.to_str().unwrap();
     if proc_has_state(key) {
-        fs::remove_file(state_file.clone())
-            .expect(format!("could not delete file {}", state_file_path).as_str());
+        return fs::remove_file(state_file);
     }
+    Ok(())
 }
 
-/// If a state value is already defined for `key`, returns it, otherwise
-/// writes `default_value` as the state value for `key` and returns `default_value`
+/// An analogue for [`clear_state!`] that should only be used within proc macros.
 ///
-/// This should only be called from within proc macros!
+/// Returns the value for the specified `key`, if it exists. If it does not exist, the key is
+/// created and set to the specified `default_value`, and then the `default_value` is returned.
+///
+/// # Example
+/// ```
+/// use macro_state::*;
+///
+/// proc_write_state("my key", "A").unwrap();
+/// assert_eq!(proc_init_state("my key", "B").unwrap(), "A");
+/// assert_eq!(proc_init_state("other key", "B").unwrap(), "B");
+/// ```
 pub fn proc_init_state(key: &str, default_value: &str) -> Result<String> {
     match proc_read_state(key) {
         Ok(existing) => Ok(existing),
@@ -326,8 +398,8 @@ mod tests {
         proc_init_state("proc B", "val B").unwrap();
         assert_eq!(proc_read_state("proc B").unwrap(), "val B");
         assert!(proc_has_state("proc B"));
-        proc_clear_state("proc B");
-        proc_clear_state("proc A");
+        proc_clear_state("proc B").unwrap();
+        proc_clear_state("proc A").unwrap();
         assert_eq!(proc_has_state("proc A"), false);
         assert_eq!(proc_has_state("proc B"), false);
         assert!(proc_read_state("proc B").is_err());

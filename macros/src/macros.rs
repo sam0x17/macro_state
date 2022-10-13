@@ -52,9 +52,16 @@ struct WriteStateInput {
 /// itself functions as a compile-time key-value store, and this is how you write a value to a
 /// specific key.
 ///
+/// If any IO error occurs while trying to write to the state file, the IO error will surface
+/// as a compile-time error on the macro call.
+///
+/// Calling [`read_state!`] with the same key that was written to in a [`write_state!`] call
+/// should result in a string literal that matches what was written via [`write_state!`].
+///
 /// # Example
 /// ```rust
 /// write_state!("my key", "some value");
+/// assert_eq!(read_state!("my key"), "some value");
 /// ```
 #[proc_macro]
 pub fn write_state(items: TokenStream) -> TokenStream {
@@ -109,12 +116,14 @@ pub fn append_state(items: TokenStream) -> TokenStream {
 }
 
 /// Reads the state value for the specified `key`. Since `macro_state` functions as a
-/// compile-time key-value store, [`read_state!`] attempts to read the state value for the
-/// specified `key`.
+/// compile-time key-value store, [`read_state!`] attempts to read the state value associaed
+/// with the specified key.
 ///
 /// The macro will expand into a string literal representing the state value in the event that
-/// a value exists for the provided key. If no value can be found for the provided key (or in
-/// the event of any sort of IO error), the macro will raise a compile-time IO error.
+/// a value exists for the provided key.
+///
+/// If no value can be found for the provided key (or in the event of any sort of IO error),
+/// the macro will raise a compile-time IO error.
 ///
 /// # Example
 /// ```rust
@@ -177,9 +186,14 @@ pub fn read_state_vec(items: TokenStream) -> TokenStream {
 
 /// Checks if an existing state value can be found for the specified `key`.
 ///
+/// Note that this function is infallible -- it should never panic and will always return
+/// `true` or `false`.
+///
 /// # Example
 /// ```
-/// has_state!("my key"); // => bool
+/// write_state!("my key", "hey")
+/// assert_eq!(has_state!("my key"), true);
+/// assert_eq!(has_state!("unknown key"), false);
 /// ```
 #[proc_macro]
 pub fn has_state(items: TokenStream) -> TokenStream {
@@ -191,7 +205,10 @@ pub fn has_state(items: TokenStream) -> TokenStream {
     }
 }
 
-/// Clears the value for the specified `key`, if it exists
+/// Clears the value for the specified `key`, if it exists.
+///
+/// If an error occurs while trying to clear the state file for the specified key, the error
+/// will surface as a compile-time error.
 ///
 /// # Example
 /// ```
@@ -205,14 +222,13 @@ pub fn clear_state(items: TokenStream) -> TokenStream {
     let key = parse_macro_input!(items as LitStr).value();
     let state_file = state_file_path(key.as_str());
     match fs::remove_file(state_file) {
-        Ok(_) => {}
-        Err(_) => {}
+        Ok(_) => quote!().into(),
+        Err(e) => quote_io_error(e),
     }
-    quote!().into()
 }
 
-/// Returns the value for the specified key, if it exists. If it does not exist, the key is
-/// created and set to the specified value, and then the value is returned.
+/// Returns the value for the specified `key`, if it exists. If it does not exist, the key is
+/// created and set to the specified `default_value`, and then the `default_value` is returned.
 ///
 /// # Example
 /// ```
