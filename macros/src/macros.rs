@@ -48,7 +48,10 @@ struct WriteStateInput {
     value: LitStr,
 }
 
-/// Writes the specified value as the state for the specified key
+/// Writes the specified `value` as the state for the specified state `key`. `macro_state`
+/// itself functions as a compile-time key-value store, and this is how you write a value to a
+/// specific key.
+///
 /// # Example
 /// ```rust
 /// write_state!("my key", "some value");
@@ -79,8 +82,7 @@ pub fn write_state(items: TokenStream) -> TokenStream {
 /// Note that if [`read_state!`] is called on an [`append_state!`]-based state file, newlines
 /// will be returned in the response.
 ///
-/// # Examples
-///
+/// # Example
 /// ```
 /// append_state!("my_key", "apples");
 /// append_state!("my_key", "pears");
@@ -106,7 +108,14 @@ pub fn append_state(items: TokenStream) -> TokenStream {
     }
 }
 
-/// Reads the state value for the specified key
+/// Reads the state value for the specified `key`. Since `macro_state` functions as a
+/// compile-time key-value store, [`read_state!`] attempts to read the state value for the
+/// specified `key`.
+///
+/// The macro will expand into a string literal representing the state value in the event that
+/// a value exists for the provided key. If no value can be found for the provided key (or in
+/// the event of any sort of IO error), the macro will raise a compile-time IO error.
+///
 /// # Example
 /// ```rust
 /// read_state!("my key"); // => "something"
@@ -166,9 +175,10 @@ pub fn read_state_vec(items: TokenStream) -> TokenStream {
     }
 }
 
-/// Checks if an existing state value can be found for the specified key
+/// Checks if an existing state value can be found for the specified `key`.
+///
 /// # Example
-/// ```rust
+/// ```
 /// has_state!("my key"); // => bool
 /// ```
 #[proc_macro]
@@ -181,9 +191,10 @@ pub fn has_state(items: TokenStream) -> TokenStream {
     }
 }
 
-/// Clears the value for the specified key, if it exists
+/// Clears the value for the specified `key`, if it exists
+///
 /// # Example
-/// ```rust
+/// ```
 /// write_state!("my key", "test");
 /// read_state!("my key"); // => "test"
 /// clear_state!("my key");
@@ -200,11 +211,11 @@ pub fn clear_state(items: TokenStream) -> TokenStream {
     quote!().into()
 }
 
-/// Returns the value for the specified key, if it exists. If
-/// it does not exist, the key is created and set to the
-/// specified value, and then the value is returned.
+/// Returns the value for the specified key, if it exists. If it does not exist, the key is
+/// created and set to the specified value, and then the value is returned.
+///
 /// # Example
-/// ```rust
+/// ```
 /// write_state!("my key", "A");
 /// init_state!("my key", "B"); // => "A"
 /// init_state!("other key", "B"); // => "B"
