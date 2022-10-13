@@ -115,7 +115,7 @@ pub fn proc_init_state(key: &str, default_value: &str) -> Result<String> {
 /// proc_append_state("my_key", "pears");
 /// proc_append_state("my_key", "oh my!");
 /// assert_eq!(proc_read_state("my_key").unwrap(), "apples\npears\noh my!\n");
-/// assert_eq!(proc_read_state_vec("my_key").unwrap(), vec!["apples", "pears", "oh my!"]);
+/// assert_eq!(proc_read_state_vec("my_key"), vec!["apples", "pears", "oh my!"]);
 /// ```
 pub fn proc_append_state(key: &str, value: &str) -> Result<()> {
     let value = format!("{}\n", value.replace("\n", "\\n"));
@@ -143,15 +143,18 @@ pub fn proc_append_state(key: &str, value: &str) -> Result<()> {
 /// `proc_init_state("key", "\n")` which should result in an empty [`Vec<String>`] when the
 /// state file is read by [`proc_read_state_vec`].
 ///
+/// Note: This function is infallible -- if any issue occurs trying to read the specified key,
+/// it is assumed that we should return an empty [`Vec`].
+///
 /// # Example
 /// ```
 /// use macro_state::*;
 ///
 /// proc_append_state("my_key", "first item").unwrap();
 /// proc_append_state("my_key", "2nd item").unwrap();
-/// assert_eq!(proc_read_state_vec("my_key").unwrap(), vec!["first item", "2nd item"]);
+/// assert_eq!(proc_read_state_vec("my_key"), vec!["first item", "2nd item"]);
 /// ```
-pub fn proc_read_state_vec(key: &str) -> Result<Vec<String>> {
+pub fn proc_read_state_vec(key: &str) -> Vec<String> {
     let state_file = state_file_path(key);
     match fs::read_to_string(state_file) {
         Ok(mut value) => {
@@ -160,12 +163,12 @@ pub fn proc_read_state_vec(key: &str) -> Result<Vec<String>> {
                     value = value[0..(value.len() - 1)].to_string();
                 }
             }
-            return Ok(value
+            value
                 .split("\n")
                 .map(|item| item.replace("\\n", "\n"))
-                .collect::<Vec<String>>());
+                .collect::<Vec<String>>()
         }
-        Err(err) => Err(err),
+        Err(_) => Vec::<String>::new(),
     }
 }
 
@@ -265,25 +268,23 @@ mod tests {
             read_state_vec!("append2"),
             vec!["line 1", "line 2", "line 3", ""]
         );
+        assert_eq!(read_state_vec!("append748"), Vec::<String>::new());
     }
 
     #[test]
     fn test_proc_read_state_vec() {
         proc_append_state("append2", "line 1").unwrap();
-        assert_eq!(proc_read_state_vec("append2").unwrap(), vec!["line 1"]);
+        assert_eq!(proc_read_state_vec("append2"), vec!["line 1"]);
         proc_append_state("append2", "line 2").unwrap();
-        assert_eq!(
-            proc_read_state_vec("append2").unwrap(),
-            vec!["line 1", "line 2"]
-        );
+        assert_eq!(proc_read_state_vec("append2"), vec!["line 1", "line 2"]);
         proc_append_state("append2", "line 3").unwrap();
         assert_eq!(
-            proc_read_state_vec("append2").unwrap(),
+            proc_read_state_vec("append2"),
             vec!["line 1", "line 2", "line 3"]
         );
         proc_append_state("append2", "").unwrap();
         assert_eq!(
-            proc_read_state_vec("append2").unwrap(),
+            proc_read_state_vec("append2"),
             vec!["line 1", "line 2", "line 3", ""]
         );
     }
@@ -299,6 +300,19 @@ mod tests {
         );
         append_state!("append4", "\n");
         assert_eq!(read_state_vec!("append4"), vec!["\n"]);
+    }
+
+    #[test]
+    fn test_proc_append_state_newline_escaping() {
+        proc_append_state("append3", "line 1").unwrap();
+        proc_append_state("append3", "hey\nwhat").unwrap();
+        proc_append_state("append3", "line 3").unwrap();
+        assert_eq!(
+            proc_read_state_vec("append3"),
+            vec!["line 1", "hey\nwhat", "line 3"]
+        );
+        proc_append_state("append4", "\n").unwrap();
+        assert_eq!(proc_read_state_vec("append4"), vec!["\n"]);
     }
 
     #[test]

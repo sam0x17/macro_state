@@ -136,6 +136,9 @@ pub fn read_state(items: TokenStream) -> TokenStream {
 /// vec!["item 1", "item 2", "item 3"];
 /// ```
 ///
+/// Note: This macro is infallible -- if any issue occurs trying to read the specified key, it
+/// is assumed that we should return an empty [`Vec`].
+///
 /// # Example
 /// ```
 /// append_state!("my_key", "first item");
@@ -159,7 +162,7 @@ pub fn read_state_vec(items: TokenStream) -> TokenStream {
                 .collect();
             quote!(vec![#(#items), *]).into()
         }
-        Err(err) => quote_io_error(err),
+        Err(_) => quote!(Vec::<String>::new()).into(),
     }
 }
 
