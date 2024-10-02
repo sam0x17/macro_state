@@ -1,5 +1,12 @@
 # macro_state
 
+### DEPRECATED
+This crate is built upon some underlying UB (undefined behavior) in the rust compiler and is
+very likely to break in random circumstances outside of your control. For a safer option that
+allows for similar behavior, please consider using the [outer macro pattern](https://youtu.be/aEWbZxNCH0A?si=pjP2rFVyV3SotIW-&t=2284) combined with my [macro_magic](https://crates.io/crates/macro_magic) crate.
+
+`macro_state` is now in archive mode and will no longer be actively updated.
+
 ![crates.io](https://img.shields.io/crates/v/macro_state.svg) ![GitHub Workflow Status
 (branch)](https://img.shields.io/github/workflow/status/sam0x17/macro_state/CI%20Checks/main)
 ![docs.rs](https://img.shields.io/docsrs/macro_state)
