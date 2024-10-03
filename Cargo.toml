@@ -1,6 +1,6 @@
 [package]
 name = "macro_state"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "MIT"
 description = "A set of macros allowing storing and loading global state at compile-time within proc macros."
@@ -12,5 +12,5 @@ readme = "README.md"
 path = "src/macro_state.rs"
 
 [dependencies]
-macro_state_macros = { path = "./macros", version = "0.2.0" }
+macro_state_macros = { path = "./macros", version = "0.2.1" }
 lazy_static = "1.4.0"
